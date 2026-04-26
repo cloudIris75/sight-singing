@@ -149,22 +149,39 @@
   .note-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
   }
   .note-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 0.85rem;
-    color: var(--accent3);
-    font-weight: 600;
+    border-radius: 10px;
+    padding: 6px 10px 5px;
+    min-width: 46px;
+    cursor: default;
+    transition: border-color 0.15s;
   }
-  .note-pill.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
+  .note-pill .n-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text);
   }
+  .note-pill .n-dur {
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.02em;
+    border: 1px solid transparent;
+  }
+  .note-pill.active { border-color: var(--accent); background: rgba(124,109,250,0.18); }
+  .d-w { background: rgba(248,113,113,0.15); color: #fca5a5; border-color: #f87171 !important; }
+  .d-h { background: rgba(56,189,248,0.15); color: #7dd3fc; border-color: #38bdf8 !important; }
+  .d-q { background: rgba(52,211,153,0.15); color: #6ee7b7; border-color: #34d399 !important; }
+  .d-e { background: rgba(192,132,252,0.15); color: #d8b4fe; border-color: #c084fc !important; }
   .difficulty-badge {
     display: inline-block;
     padding: 3px 12px;
@@ -322,6 +339,12 @@ const DIFFICULTY_CFG = {
 };
 
 const DUR_BEATS = { 'w':4, 'h':2, 'q':1, 'e':0.5, 's':0.25 };
+const DUR_META  = {
+  w: { label: '온음',   cls: 'd-w' },
+  h: { label: '2분음', cls: 'd-h' },
+  q: { label: '4분음', cls: 'd-q' },
+  e: { label: '8분음', cls: 'd-e' },
+};
 
 function generateMelody(difficulty, keyName) {
   const cfg   = DIFFICULTY_CFG[difficulty];
@@ -365,7 +388,8 @@ function renderScore(measures, keyName) {
   const container = document.getElementById('score-container');
   container.innerHTML = '';
 
-  const isMobile = window.innerWidth < 600;
+  const containerW = container.offsetWidth || 680;
+  const isMobile = containerW < 600;
   const measuresPerRow = isMobile ? 2 : 4;
   const rows = [];
   for (let i = 0; i < measures.length; i += measuresPerRow) {
@@ -373,26 +397,28 @@ function renderScore(measures, keyName) {
   }
 
   const keySigExtra = { C:0, G:1, F:1, D:2, Bb:2, A:3 };
-  const maxNotes = Math.max(...measures.map(m => m.length));
-  const minSlot  = isMobile ? 32 : 46;
-  const staveW   = Math.max(isMobile ? 150 : 200, maxNotes * minSlot + 20);
-  const firstExtra = 44 + (keySigExtra[keyName] || 0) * 13;
+  const firstExtra  = 44 + (keySigExtra[keyName] || 0) * 13;
+  const maxNotes    = Math.max(...measures.map(m => m.length));
+  const MIN_SLOT    = isMobile ? 33 : 38;
+  const fittedW     = Math.floor((containerW - firstExtra - 10) / measuresPerRow);
+  const staveW      = Math.max(maxNotes * MIN_SLOT + 16, fittedW, 140);
+  const svgH        = 155;
 
   rows.forEach((row) => {
-    const totalW = firstExtra + staveW * row.length + 24;
+    const totalW = firstExtra + staveW * row.length + 16;
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', totalW);
-    svg.setAttribute('height', 130);
+    svg.setAttribute('height', svgH);
     container.appendChild(svg);
 
     const renderer = new Renderer(svg, Renderer.Backends.SVG);
-    renderer.resize(totalW, 130);
+    renderer.resize(totalW, svgH);
     const ctx = renderer.getContext();
 
     let x = 10;
     row.forEach((measure, mi) => {
       const w = mi === 0 ? staveW + firstExtra : staveW;
-      const stave = new Stave(x, 10, w);
+      const stave = new Stave(x, 22, w);
       if (mi === 0) {
         stave.addClef('treble');
         stave.addKeySignature(keyName);
@@ -411,7 +437,7 @@ function renderScore(measures, keyName) {
         Accidental.applyAccidentals([voice], keyName);
 
         const beams = Beam.generateBeams(vfNotes);
-        new Formatter().joinVoices([voice]).format([voice], w - 12);
+        new Formatter().joinVoices([voice]).format([voice], w - 10);
         voice.draw(ctx, stave);
         beams.forEach(b => b.setContext(ctx).draw());
       } catch (err) {
@@ -539,11 +565,11 @@ function generate() {
   noteList.innerHTML = '';
   allNotes = flattenNotes(currentMeasures);
   allNotes.forEach(n => {
-    const pill = document.createElement('span');
+    const pill = document.createElement('div');
     pill.className = 'note-pill';
     const display = n.note.replace(/(\d)/,'<sub>$1</sub>');
-    const durLabel = { q:'♩', h:'2분', e:'♪', w:'○' }[n.dur] || '';
-    pill.innerHTML = `${display} ${durLabel}`;
+    const meta = DUR_META[n.dur] || { label: n.dur, cls: 'd-q' };
+    pill.innerHTML = `<span class="n-name">${display}</span><span class="n-dur ${meta.cls}">${meta.label}</span>`;
     noteList.appendChild(pill);
   });
 
