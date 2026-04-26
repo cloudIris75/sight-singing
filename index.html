@@ -112,7 +112,7 @@
     border-radius: 14px;
     padding: 16px 8px;
     box-shadow: 0 4px 32px rgba(0,0,0,0.5);
-    overflow-x: hidden;
+    overflow-x: auto;
     min-height: 160px;
     display: flex;
     align-items: center;
@@ -398,11 +398,10 @@ function renderScore(measures, keyName) {
 
   const keySigExtra = { C:0, G:1, F:1, D:2, Bb:2, A:3 };
   const firstExtra  = 44 + (keySigExtra[keyName] || 0) * 13;
-  const svgH   = 155;
-  const staveW = Math.max(
-    Math.floor((containerW - firstExtra - 16) / measuresPerRow),
-    130
-  );
+  const svgH        = 155;
+  const maxNotes    = Math.max(...measures.map(m => m.length));
+  const fittedW     = Math.floor((containerW - firstExtra - 16) / measuresPerRow);
+  const staveW      = Math.max(maxNotes * 30 + 16, fittedW, 130);
 
   rows.forEach((row) => {
     const totalW = firstExtra + staveW * row.length + 16;
