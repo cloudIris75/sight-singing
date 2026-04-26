@@ -374,8 +374,8 @@ function renderScore(measures, keyName) {
 
   const keySigExtra = { C:0, G:1, F:1, D:2, Bb:2, A:3 };
   const maxNotes = Math.max(...measures.map(m => m.length));
-  const minSlot  = isMobile ? 26 : 30;
-  const staveW   = Math.max(isMobile ? 130 : 150, maxNotes * minSlot + 20);
+  const minSlot  = isMobile ? 32 : 46;
+  const staveW   = Math.max(isMobile ? 150 : 200, maxNotes * minSlot + 20);
   const firstExtra = 44 + (keySigExtra[keyName] || 0) * 13;
 
   rows.forEach((row) => {
@@ -411,7 +411,7 @@ function renderScore(measures, keyName) {
         Accidental.applyAccidentals([voice], keyName);
 
         const beams = Beam.generateBeams(vfNotes);
-        new Formatter().joinVoices([voice]).format([voice], w - 28);
+        new Formatter().joinVoices([voice]).format([voice], w - 12);
         voice.draw(ctx, stave);
         beams.forEach(b => b.setContext(ctx).draw());
       } catch (err) {
@@ -505,6 +505,7 @@ function stopPlayback(finished = false) {
   isPlaying = false;
   playTimeout.forEach(clearTimeout);
   playTimeout = [];
+  if (audioCtx) { audioCtx.close(); audioCtx = null; }
   document.getElementById('btn-play').disabled = false;
   document.getElementById('btn-stop').disabled = true;
   document.querySelectorAll('.note-pill').forEach(p => p.classList.remove('active'));
@@ -541,7 +542,7 @@ function generate() {
     const pill = document.createElement('span');
     pill.className = 'note-pill';
     const display = n.note.replace(/(\d)/,'<sub>$1</sub>');
-    const durLabel = { q:'♩', h:'𝅗𝅥', e:'♪', w:'○' }[n.dur] || '';
+    const durLabel = { q:'♩', h:'2분', e:'♪', w:'○' }[n.dur] || '';
     pill.innerHTML = `${display} ${durLabel}`;
     noteList.appendChild(pill);
   });
